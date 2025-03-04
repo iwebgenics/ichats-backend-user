@@ -4,6 +4,7 @@ dotenv.config(); // ✅ Load .env variables first
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+
 import path from "path";
 import groupRoutes from "./routes/group.route.js";
 import { connectDB } from "./lib/db.js";
@@ -18,11 +19,7 @@ const __dirname = path.resolve();
 
 
 
-// Allow requests from all origins (or specify your Electron app's origin)
-app.use(cors({
-  origin: '*', // Allow all origins (for testing)
-  credentials: true,
-}));
+
 
 
 // ✅ Middleware Configuration
@@ -33,7 +30,7 @@ app.use(cookieParser());
 // ✅ CORS Setup - Allow Frontend Access
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
     credentials: true,
   })
 );
