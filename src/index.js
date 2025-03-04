@@ -15,6 +15,16 @@ import { app, server } from "./lib/socket.js"; // ✅ Importing app and server f
 const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
+
+
+
+// Allow requests from all origins (or specify your Electron app's origin)
+app.use(cors({
+  origin: '*', // Allow all origins (for testing)
+  credentials: true,
+}));
+
+
 // ✅ Middleware Configuration
 app.use(express.json({ limit: "150mb" }));
 app.use(express.urlencoded({ limit: "150mb", extended: true }));
