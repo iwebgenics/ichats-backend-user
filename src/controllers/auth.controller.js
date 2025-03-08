@@ -3,6 +3,10 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js"; // Add this
 import bcrypt from "bcryptjs";
 // import cloudinary from "../lib/cloudinary.js";
+import fs from "fs";
+import path from "path";
+
+
 
 export const signup = async (req, res) => {
   const { fullName, email, password, role } = req.body;
@@ -94,15 +98,13 @@ export const logout = async (req, res) => {
       $or: [{ senderId: userId }, { receiverId: userId }]
     });
 
-    // Define the absolute uploads directory (same as used in sendMessage)
+    // Define the absolute uploads directory
     const uploadsDir = "/var/www/html/ichats-uploads/";
-    console.log("Logout started for user:", req.user?._id);
+    console.log("Logout started for user:", req.user._id);
 
-    // Iterate over messages and remove associated files if they exist
     messagesToDelete.forEach((msg) => {
       console.log("Processing message ID:", msg._id, "image:", msg.image, "file:", msg.file);
-    
-      // then try/catch around unlink
+      
       if (msg.image) {
         try {
           const filename = msg.image.split("/").pop();
@@ -113,17 +115,20 @@ export const logout = async (req, res) => {
           console.error("Failed to delete image file:", err);
         }
       }
-      // If there's a file attachment, delete it as well
       if (msg.file && msg.file.url) {
-        const filename = msg.file.url.split("/").pop();
-        const filePath = path.join(uploadsDir, filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+        try {
+          const filename = msg.file.url.split("/").pop();
+          const filePath = path.join(uploadsDir, filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log("Deleted attachment file:", filePath);
+          }
+        } catch (err) {
+          console.error("Failed to delete file attachment:", err);
         }
       }
     });
 
-    // Delete messages from the database
     await Message.deleteMany({
       $or: [{ senderId: userId }, { receiverId: userId }]
     });
@@ -147,16 +152,38 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ message: "Profile pic is required" });
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+    // Define the directory for profile pictures
+    const uploadsDir = "/var/www/html/ichats-uploads/profile-pics/";
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Remove any data URL prefix if present
+    let base64Data = profilePic;
+    const matches = base64Data.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+    if (matches) {
+      base64Data = matches[2];
+    }
+
+    // Generate a unique filename (you can adjust extension based on MIME type if needed)
+    const fileName = `${Date.now()}-profile.png`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    // Write the file to disk
+    fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+
+    // Construct the public URL for the profile picture
+    const publicUrl = `https://chat.ichats.in/ichats-uploads/profile-pics/${fileName}`;
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url },
+      { profilePic: publicUrl },
       { new: true }
     );
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    console.log("error in update profile:", error);
+    console.log("Error in update profile:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
