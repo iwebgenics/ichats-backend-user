@@ -1,8 +1,11 @@
+import fs from "fs";
+import path from "path";
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import mongoose from "mongoose";
 import Group from "../models/group.model.js";
-import cloudinary from "../lib/cloudinary.js";
+// Remove cloudinary import if not used anymore
+// import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
 
@@ -63,24 +66,33 @@ export const sendMessage = async (req, res) => {
 
     if (file && file.data) {
       isImage = file.type.startsWith("image/");
-    
-      const uploadOptions = isImage
-        ? {
-            // For images, Cloudinary defaults to resource_type "image"
-            public_id: file.name.replace(/\.[^/.]+$/, "") // remove extension; Cloudinary appends it automatically
-          }
-        : {
-            resource_type: "raw", // For non-image files
-            public_id: file.name.replace(/\.[^/.]+$/, "") // remove extension; Cloudinary appends it automatically
-          };
-    
-      const uploadResponse = await cloudinary.uploader.upload(file.data, uploadOptions);
-      fileUrl = uploadResponse.secure_url;
+
+      // Use an absolute path for uploads directory
+      const uploadsDir = "/var/www/html/ichats-uploads/";
+
+      // Ensure uploads directory exists (optional if you already created it manually)
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      // Remove any data URL prefix if present (e.g., "data:image/png;base64,")
+      let base64Data = file.data;
+      const matches = base64Data.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+      if (matches) {
+        base64Data = matches[2];
+      }
+
+      // Generate a unique filename
+      fileName = `${Date.now()}-${file.name}`;
       fileType = file.type;
-      fileName = file.name;
+
+      // Write the file to the uploads directory
+      const filePath = path.join(uploadsDir, fileName);
+      fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+
+      // Construct the public URL for the file
+      fileUrl = `https://chat.ichats.in/ichats-uploads/${fileName}`;
     }
-    
-    
 
     const newMessage = new Message({
       senderId,
@@ -90,7 +102,7 @@ export const sendMessage = async (req, res) => {
       file: !isImage && fileUrl
         ? { 
             url: fileUrl, 
-            type: fileType,  // You might consider renaming this key if you run into schema issues.
+            type: fileType,  
             name: fileName 
           }
         : null,

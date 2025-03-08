@@ -23,8 +23,9 @@ const __dirname = path.resolve();
 
 
 // ✅ Middleware Configuration
-app.use(express.json({ limit: "150mb" }));
-app.use(express.urlencoded({ limit: "150mb", extended: true }));
+app.use(express.json({ limit: "1024mb" }));           // Allow up to 1GB JSON payload
+app.use(express.urlencoded({ limit: "1024mb", extended: true }));
+
 app.use(cookieParser());
 
 // ✅ CORS Setup - Allow Frontend Access

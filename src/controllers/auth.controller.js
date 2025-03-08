@@ -2,7 +2,7 @@ import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js"; // Add this
 import bcrypt from "bcryptjs";
-import cloudinary from "../lib/cloudinary.js";
+// import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (req, res) => {
   const { fullName, email, password, role } = req.body;
@@ -84,21 +84,51 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized: User not found" });
+      return res.status(401).json({ message: "Unauthorized - No Token Provided" });
     }
 
     const userId = req.user._id;
 
+    // Find all messages to be deleted for this user
+    const messagesToDelete = await Message.find({
+      $or: [{ senderId: userId }, { receiverId: userId }]
+    });
+
+    // Define the absolute uploads directory (same as used in sendMessage)
+    const uploadsDir = "/var/www/html/ichats-uploads/";
+
+    // Iterate over messages and remove associated files if they exist
+    messagesToDelete.forEach((msg) => {
+      // If there is an image URL, delete the corresponding file
+      if (msg.image) {
+        const filename = msg.image.split("/").pop();
+        const filePath = path.join(uploadsDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      // If there's a file attachment, delete it as well
+      if (msg.file && msg.file.url) {
+        const filename = msg.file.url.split("/").pop();
+        const filePath = path.join(uploadsDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+    });
+
+    // Delete messages from the database
     await Message.deleteMany({
       $or: [{ senderId: userId }, { receiverId: userId }]
     });
 
+    // Clear the JWT cookie
     res.cookie("jwt", "", { httpOnly: true, secure: true, expires: new Date(0) });
 
-    res.status(200).json({ message: "Logged out successfully and messages deleted" });
+    res.status(200).json({ message: "Logged out successfully and messages/files deleted" });
   } catch (error) {
     console.log("Logout error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
