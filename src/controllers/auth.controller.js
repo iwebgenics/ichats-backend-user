@@ -96,15 +96,21 @@ export const logout = async (req, res) => {
 
     // Define the absolute uploads directory (same as used in sendMessage)
     const uploadsDir = "/var/www/html/ichats-uploads/";
+    console.log("Logout started for user:", req.user?._id);
 
     // Iterate over messages and remove associated files if they exist
     messagesToDelete.forEach((msg) => {
-      // If there is an image URL, delete the corresponding file
+      console.log("Processing message ID:", msg._id, "image:", msg.image, "file:", msg.file);
+    
+      // then try/catch around unlink
       if (msg.image) {
-        const filename = msg.image.split("/").pop();
-        const filePath = path.join(uploadsDir, filename);
-        if (fs.existsSync(filePath)) {
+        try {
+          const filename = msg.image.split("/").pop();
+          const filePath = path.join(uploadsDir, filename);
           fs.unlinkSync(filePath);
+          console.log("Deleted image file:", filePath);
+        } catch (err) {
+          console.error("Failed to delete image file:", err);
         }
       }
       // If there's a file attachment, delete it as well
