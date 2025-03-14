@@ -31,7 +31,7 @@ app.use(cookieParser());
 // ✅ CORS Setup - Allow Frontend Access
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://user.ichats.in", // EXACT match, no trailing slash
     credentials: true,
   })
 );
