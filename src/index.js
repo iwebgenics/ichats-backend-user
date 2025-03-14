@@ -31,10 +31,12 @@ app.use(cookieParser());
 // ✅ CORS Setup - Allow Frontend Access
 app.use(
   cors({
-    origin: "https://chat.ichats.in",
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
+app.use(express.json());
+
 
 // ✅ API Routes
 app.use("/api/auth", authRoutes);

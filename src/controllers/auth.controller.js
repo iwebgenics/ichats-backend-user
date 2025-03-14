@@ -48,8 +48,47 @@ export const signup = async (req, res) => {
 };
 
 
+// export const login = async (req, res) => {
+//   const { email, password } = req.body;
+//   try {
+//     const user = await User.findOne({ email });
+
+//     if (!user) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     const isPasswordCorrect = await bcrypt.compare(password, user.password);
+//     if (!isPasswordCorrect) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     // If role is empty, default to "admin"
+//     let userRole = user.role;
+//     if (!userRole || userRole.trim() === "") {
+//       userRole = "admin";
+//     }
+
+//     // Generate token (assumes generateToken sets a cookie or similar)
+//     generateToken(user._id, res);
+
+//     // Return all relevant user info including role
+//     res.status(200).json({
+//       _id: user._id,
+//       fullName: user.fullName,
+//       email: user.email,
+//       profilePic: user.profilePic,
+//       role: userRole,
+//     });
+//   } catch (error) {
+//     console.log("Error in login controller", error.message);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
 export const login = async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.findOne({ email });
 
@@ -57,33 +96,31 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // Prevent admin from logging in
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Access denied for admin users" });
+    }
+
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // If role is empty, default to "admin"
-    let userRole = user.role;
-    if (!userRole || userRole.trim() === "") {
-      userRole = "admin";
-    }
-
-    // Generate token (assumes generateToken sets a cookie or similar)
+    // Generate token (optional)
     generateToken(user._id, res);
 
-    // Return all relevant user info including role
+    // Return basic user info
     res.status(200).json({
       _id: user._id,
-      fullName: user.fullName,
       email: user.email,
-      profilePic: user.profilePic,
-      role: userRole,
     });
   } catch (error) {
-    console.log("Error in login controller", error.message);
+    console.error("Error in login controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
 
 export const logout = async (req, res) => {
   try {
