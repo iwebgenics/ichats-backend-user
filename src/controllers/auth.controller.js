@@ -210,7 +210,7 @@ export const updateProfile = async (req, res) => {
     fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
 
     // Construct the public URL for the profile picture
-    const publicUrl = `https://chat.ichats.in/ichats-uploads/profile-pics/${fileName}`;
+    const publicUrl = `https://user.ichats.in/ichats-uploads/profile-pics/${fileName}`;
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,

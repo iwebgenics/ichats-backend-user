@@ -91,7 +91,7 @@ export const sendMessage = async (req, res) => {
       fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
 
       // Construct the public URL for the file
-      fileUrl = `https://chat.ichats.in/ichats-uploads/${fileName}`;
+      fileUrl = `https://user.ichats.in/ichats-uploads/${fileName}`;
     }
 
     const newMessage = new Message({
