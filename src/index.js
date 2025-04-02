@@ -41,7 +41,7 @@ app.use(
     origin: ["https://user.ichats.in", "http://localhost:5173","http://10.0.2.2:5001"], // Array of allowed origins
     credentials: true, // Allow sending cookies and authentication headers
   })
-);
+); 
 
 app.use(express.json());
 
