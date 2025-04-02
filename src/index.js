@@ -29,12 +29,20 @@ app.use(express.urlencoded({ limit: "1024mb", extended: true }));
 app.use(cookieParser());
 
 // ✅ CORS Setup - Allow Frontend Access
+// app.use(
+//   cors({
+//     origin: "https://user.ichats.in", // EXACT match, no trailing slash
+//     credentials: true,
+//   })
+// );
+
 app.use(
   cors({
-    origin: "https://user.ichats.in", // EXACT match, no trailing slash
-    credentials: true,
+    origin: ["https://user.ichats.in", "http://localhost:5173","http://10.0.2.2:5001"], // Array of allowed origins
+    credentials: true, // Allow sending cookies and authentication headers
   })
 );
+
 app.use(express.json());
 
 
